@@ -92,6 +92,3 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        Because christify depends on flutter_bloc >=8.0.0 which requires SDK version >=2.17.0...
-Task :app:compileReleaseJavaWithJavac FAILED
-CocoaPods not installed or not in valid state
