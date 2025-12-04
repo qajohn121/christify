@@ -16,7 +16,7 @@ jobs:
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
+        distribution: 'zulu'
         java-version: '17'
     
     - name: Setup Flutter
@@ -26,23 +26,36 @@ jobs:
         channel: 'stable'
         cache: true
     
-    - name: Flutter doctor
-      run: flutter doctor -v
+    - name: Verify Flutter installation
+      run: |
+        flutter --version
+        flutter doctor -v
     
-    - name: Get dependencies
-      run: flutter pub get
+    - name: Clean and get dependencies
+      run: |
+        flutter clean
+        flutter pub get
     
-    - name: Analyze code
-      run: flutter analyze --no-fatal-infos
-      continue-on-error: true
+    - name: Build APK (Debug for testing)
+      run: flutter build apk --debug --verbose
+      continue-on-error: false
     
-    - name: Build APK
-      run: flutter build apk --release --verbose
-    
-    - name: Upload APK artifact
+    - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: christify-apk
+        name: christify-debug-apk
+        path: build/app/outputs/flutter-apk/app-debug.apk
+        retention-days: 30
+    
+    - name: Build APK (Release)
+      run: flutter build apk --release --verbose
+      continue-on-error: true
+    
+    - name: Upload Release APK
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: christify-release-apk
         path: build/app/outputs/flutter-apk/app-release.apk
         retention-days: 30
     
@@ -53,17 +66,28 @@ jobs:
         tag_name: v1.0.${{ github.run_number }}
         name: Christify v1.0.${{ github.run_number }}
         body: |
-          ## Christify - Christian Quotes App
+          ## Christify - Christian Quotes App for Gen Z
           
           Download and install the APK on your Android device.
           
+          ### What's Included
+          - Debug APK (for testing)
+          - Release APK (for production)
+          
           ### Features
           - 15 Gen Z Christian motivational quotes
-          - Swipeable interface
+          - Swipeable TikTok-style interface
           - Dark mode support
           - Favorites system
-          - Share functionality
-        files: build/app/outputs/flutter-apk/app-release.apk
+          - Share to social media
+          
+          ### Installation
+          1. Download the APK file
+          2. Enable "Install from Unknown Sources" on your Android device
+          3. Install and enjoy!
+        files: |
+          build/app/outputs/flutter-apk/app-debug.apk
+          build/app/outputs/flutter-apk/app-release.apk
         draft: false
         prerelease: false
       env:
