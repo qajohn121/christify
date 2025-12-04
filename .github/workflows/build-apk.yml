@@ -26,6 +26,11 @@ jobs:
           channel: 'stable'
           cache: true
       
+      # === THIS IS THE FIX ===
+      # This command regenerates the missing android/gradlew file
+      - name: Regenerate Android Build Config
+        run: flutter create .
+      
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
