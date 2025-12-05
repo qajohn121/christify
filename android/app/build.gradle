@@ -47,18 +47,18 @@ android {
         minSdkVersion 21  
         targetSdkVersion 35
 
-        // === UPDATE TO VERSION 4 ===
-        versionCode 4
-        versionName "1.0.4"
+        // === UPDATE TO VERSION 5 ===
+        // Version 4 is burned, so we use 5.
+        versionCode 5
+        versionName "1.0.5"
         // ===========================
         
         multiDexEnabled true 
 
-        // === FIX FOR DEBUG SYMBOLS WARNING ===
+        // Keep debug symbols FULL to avoid warnings
         ndk {
             debugSymbolLevel 'FULL'
         }
-        // =====================================
     }
 
     signingConfigs {
@@ -77,8 +77,7 @@ android {
             if (keystoreProperties['storeFile']) {
                 signingConfig signingConfigs.release
             }
-            // We keep this FALSE to prevent the app from breaking
-            // This is why you see the "Deobfuscation" warning, but it is safe to ignore.
+            // Keep false to prevent crashes for now
             minifyEnabled false 
             shrinkResources false
         }
