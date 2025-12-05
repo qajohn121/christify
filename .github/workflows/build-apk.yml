@@ -43,8 +43,20 @@ jobs:
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
 
-      # === THE FIX IS HERE ===
-      # We delete the corrupt icon folders and force Flutter to regenerate valid ones
+      # === THE MAGIC FIX: AUTO-RENAME PACKAGE ===
+      # This changes com.example.christify -> com.qajohn.christify
+      - name: Auto-Rename Package
+        run: |
+          # 1. Replace text in build.gradle and Manifests
+          find android -type f \( -name "build.gradle" -o -name "*.xml" -o -name "*.kt" -o -name "*.java" \) -exec sed -i 's/com.example.christify/com.qajohn.christify/g' {} +
+          
+          # 2. Move the Kotlin file to the new folder structure
+          mkdir -p android/app/src/main/kotlin/com/qajohn
+          cp -r android/app/src/main/kotlin/com/example/christify android/app/src/main/kotlin/com/qajohn/
+          rm -rf android/app/src/main/kotlin/com/example
+      # ==========================================
+
+      # 3. Repair Icons (Just in case)
       - name: Fix Corrupt Icons & Repair Project
         run: |
           rm -rf android/app/src/main/res/mipmap-*
