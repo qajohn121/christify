@@ -10,15 +10,16 @@ if (localPropertiesFile.exists()) {
     localProperties.load(new FileInputStream(localPropertiesFile))
 }
 
-// I changed this to '2' to avoid "Version already exists" errors
+// --- VERSION CODE SETTINGS ---
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
-    flutterVersionCode = '3' 
+    // I CHANGED THIS TO 2 SO GOOGLE ACCEPTS THE NEW UPLOAD
+    flutterVersionCode = '2' 
 }
 
 def flutterVersionName = localProperties.getProperty('flutter.versionName')
 if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
+    flutterVersionName = '1.0.1'
 }
 
 // --- LOAD SECRETS ---
@@ -34,7 +35,11 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "com.example.christify"
-    compileSdk flutter.compileSdkVersion
+    
+    // === FIX PART 1: HARDCODE COMPILE SDK TO 35 ===
+    compileSdk 35
+    // ==============================================
+    
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -53,11 +58,12 @@ android {
     defaultConfig {
         applicationId "com.example.christify"
         
-        // === THIS IS THE FIX ===
         minSdkVersion 21  
-        // =======================
         
-        targetSdkVersion flutter.targetSdkVersion
+        // === FIX PART 2: HARDCODE TARGET SDK TO 35 ===
+        targetSdkVersion 35
+        // =============================================
+
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true 
