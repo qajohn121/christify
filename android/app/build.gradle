@@ -10,9 +10,10 @@ if (localPropertiesFile.exists()) {
     localProperties.load(new FileInputStream(localPropertiesFile))
 }
 
+// I changed this to '2' to avoid "Version already exists" errors
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
-    flutterVersionCode = '1'
+    flutterVersionCode = '2' 
 }
 
 def flutterVersionName = localProperties.getProperty('flutter.versionName')
@@ -20,16 +21,16 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-// --- ROBUST KEYSTORE LOADING ---
+// --- LOAD SECRETS ---
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
-    println "✅ FOUND key.properties at " + keystorePropertiesFile.absolutePath
+    println "✅ FOUND key.properties"
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 } else {
-    println "⚠️ WARNING: key.properties NOT FOUND. Release build may fail."
+    println "⚠️ WARNING: key.properties NOT FOUND"
 }
-// -------------------------------
+// --------------------
 
 android {
     namespace "com.example.christify"
@@ -51,17 +52,19 @@ android {
 
     defaultConfig {
         applicationId "com.example.christify"
-        minSdkVersion flutter.minSdkVersion
+        
+        // === THIS IS THE FIX ===
+        minSdkVersion 21  
+        // =======================
+        
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        // Fixes "Cannot fit requested classes" error
         multiDexEnabled true 
     }
 
     signingConfigs {
         release {
-            // Only try to sign if the key file exists to prevent crashes
             if (keystoreProperties['storeFile']) {
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
@@ -73,18 +76,14 @@ android {
 
     buildTypes {
         release {
-            // Only apply signing config if it was successfully created
             if (keystoreProperties['storeFile']) {
                 signingConfig signingConfigs.release
             }
-            
-            // Disable shrinking to prevent R8 errors
             minifyEnabled false 
             shrinkResources false
         }
     }
     
-    // Ignore Lint errors to force the build to finish
     lintOptions {
         checkReleaseBuilds false
         abortOnError false
