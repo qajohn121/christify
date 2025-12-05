@@ -1,4 +1,4 @@
-name: Build Release Bundle
+name: Build Release Bundle and APK
 
 on:
   push:
@@ -44,8 +44,6 @@ jobs:
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
 
       # === THE FIX: SMART RENAME ===
-      # Instead of moving files manually, we tell Flutter to regenerate the Android project
-      # with the new Organization Name (com.qajohn).
       - name: Update Package Name
         run: |
           # 1. Regenerate Android project with new org name
@@ -71,13 +69,22 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
 
-      # 5. Build the Signed App Bundle (.aab)
-      - name: Build App Bundle
-        run: flutter build appbundle --release --verbose
+      # 5. Build BOTH App Bundle and APK
+      - name: Build App Bundle and APK
+        run: |
+          flutter build appbundle --release --verbose
+          flutter build apk --release --verbose
 
-      # 6. Upload the Bundle
+      # 6. Upload the Bundle (For Play Store)
       - name: Upload App Bundle
         uses: actions/upload-artifact@v4
         with:
           name: app-bundle
           path: build/app/outputs/bundle/release/app-release.aab
+
+      # 7. Upload the APK (For Emulator/Testing)
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
