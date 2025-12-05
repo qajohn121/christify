@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build Release Bundle
 
 on:
   push:
@@ -10,11 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout Code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Setup Java 17 (Standard for modern Flutter)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -22,35 +20,47 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      # 3. Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0' # Using a very stable recent version
+          flutter-version: '3.19.0'
           channel: 'stable'
           cache: true
 
-      # 4. EMERGENCY FIX: Re-create missing Android files
-      # This fixes the "No such file" and "gradlew" errors
-      - name: Repair Android Project
+      # 1. Decode the Keystore File from GitHub Secrets
+      - name: Download Android Keystore
+        id: android_keystore
+        uses: timheuer/base64-to-file@v1.2
+        with:
+          fileName: upload-keystore.jks
+          encodedString: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      # 2. Create key.properties using the Secrets
+      - name: Create key.properties
         run: |
-          flutter create --platforms android .
+          echo "storeFile=${{ steps.android_keystore.outputs.filePath }}" > android/key.properties
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+
+      # 3. Fix Missing Files (Just in case)
+      - name: Repair Android Project
+        run: flutter create --platforms android .
       
-      # 5. Fix Permissions
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
-      # 6. Get Packages
+      # 4. Get Dependencies
       - name: Get Dependencies
         run: flutter pub get
 
-      # 7. Build DEBUG APK (Bypasses Signing/Release errors)
-      - name: Build Debug APK
-        run: flutter build apk --debug --verbose
+      # 5. Build the Signed App Bundle (.aab)
+      - name: Build App Bundle
+        run: flutter build appbundle --release --verbose
 
-      # 8. Upload the APK
-      - name: Upload APK
+      # 6. Upload the Bundle (This is the file for Google Play!)
+      - name: Upload App Bundle
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: app-bundle
+          path: build/app/outputs/bundle/release/app-release.aab
