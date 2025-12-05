@@ -27,7 +27,7 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # 1. Decode the Keystore File from GitHub Secrets
+      # 1. Decode the Keystore File
       - name: Download Android Keystore
         id: android_keystore
         uses: timheuer/base64-to-file@v1.2
@@ -35,7 +35,7 @@ jobs:
           fileName: upload-keystore.jks
           encodedString: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
-      # 2. Create key.properties using the Secrets
+      # 2. Create key.properties
       - name: Create key.properties
         run: |
           echo "storeFile=${{ steps.android_keystore.outputs.filePath }}" > android/key.properties
@@ -43,9 +43,12 @@ jobs:
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
 
-      # 3. Fix Missing Files (Just in case)
-      - name: Repair Android Project
-        run: flutter create --platforms android .
+      # === THE FIX IS HERE ===
+      # We delete the corrupt icon folders and force Flutter to regenerate valid ones
+      - name: Fix Corrupt Icons & Repair Project
+        run: |
+          rm -rf android/app/src/main/res/mipmap-*
+          flutter create --platforms android .
       
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
@@ -58,7 +61,7 @@ jobs:
       - name: Build App Bundle
         run: flutter build appbundle --release --verbose
 
-      # 6. Upload the Bundle (This is the file for Google Play!)
+      # 6. Upload the Bundle
       - name: Upload App Bundle
         uses: actions/upload-artifact@v4
         with:
