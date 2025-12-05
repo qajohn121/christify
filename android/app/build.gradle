@@ -20,19 +20,19 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-// --- LOAD SECRETS ---
+// --- ROBUST KEYSTORE LOADING ---
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
+    println "✅ FOUND key.properties at " + keystorePropertiesFile.absolutePath
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+} else {
+    println "⚠️ WARNING: key.properties NOT FOUND. Release build may fail."
 }
-// --------------------
+// -------------------------------
 
 android {
-    // === THIS WAS MISSING AND CAUSED THE CRASH ===
-    namespace "com.example.christify" 
-    // ============================================
-
+    namespace "com.example.christify"
     compileSdk flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
@@ -55,26 +55,36 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        // Fixes "Cannot fit requested classes" error
+        multiDexEnabled true 
     }
 
     signingConfigs {
         release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-            storePassword keystoreProperties['storePassword']
+            // Only try to sign if the key file exists to prevent crashes
+            if (keystoreProperties['storeFile']) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // Only apply signing config if it was successfully created
+            if (keystoreProperties['storeFile']) {
+                signingConfig signingConfigs.release
+            }
+            
+            // Disable shrinking to prevent R8 errors
             minifyEnabled false 
             shrinkResources false
         }
     }
     
-    // This prevents small warnings from stopping the build
+    // Ignore Lint errors to force the build to finish
     lintOptions {
         checkReleaseBuilds false
         abortOnError false
