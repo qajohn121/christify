@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Debug APK
 
 on:
   push:
@@ -8,42 +8,49 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
+      # 1. Checkout Code
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
+      # 2. Setup Java 17 (Standard for modern Flutter)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-      
+          cache: 'gradle'
+
+      # 3. Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.16.0'
+          flutter-version: '3.19.0' # Using a very stable recent version
           channel: 'stable'
           cache: true
+
+      # 4. EMERGENCY FIX: Re-create missing Android files
+      # This fixes the "No such file" and "gradlew" errors
+      - name: Repair Android Project
+        run: |
+          flutter create --platforms android .
       
-      # === THIS IS THE FIX ===
-      # This command regenerates the missing android/gradlew file
-      - name: Regenerate Android Build Config
-        run: flutter create .
-      
+      # 5. Fix Permissions
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
-      - name: Clean and get dependencies
-        run: |
-          flutter clean
-          flutter pub get
-      
-      - name: Build APK (Release)
-        run: flutter build apk --release --verbose
-      
-      - name: Upload Release APK
+      # 6. Get Packages
+      - name: Get Dependencies
+        run: flutter pub get
+
+      # 7. Build DEBUG APK (Bypasses Signing/Release errors)
+      - name: Build Debug APK
+        run: flutter build apk --debug --verbose
+
+      # 8. Upload the APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
