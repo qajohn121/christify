@@ -24,7 +24,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace "com.example.christify"
     
-    // ✅ FIX 1: Target Android 15 (API 35)
+    // Target Android 15 (API 35)
     compileSdk 35
     
     ndkVersion flutter.ndkVersion
@@ -44,18 +44,21 @@ android {
 
     defaultConfig {
         applicationId "com.example.christify"
-        
         minSdkVersion 21  
-        
-        // ✅ FIX 1: Target Android 15 (API 35)
         targetSdkVersion 35
 
-        // ✅ FIX 2: HARDCODED VERSION 3 
-        // We typed '3' directly here so no variable can mess it up.
-        versionCode 3
+        // === UPDATE TO VERSION 4 ===
+        versionCode 4
+        versionName "1.0.4"
+        // ===========================
         
-        versionName "1.0.3"
         multiDexEnabled true 
+
+        // === FIX FOR DEBUG SYMBOLS WARNING ===
+        ndk {
+            debugSymbolLevel 'FULL'
+        }
+        // =====================================
     }
 
     signingConfigs {
@@ -74,6 +77,8 @@ android {
             if (keystoreProperties['storeFile']) {
                 signingConfig signingConfigs.release
             }
+            // We keep this FALSE to prevent the app from breaking
+            // This is why you see the "Deobfuscation" warning, but it is safe to ignore.
             minifyEnabled false 
             shrinkResources false
         }
