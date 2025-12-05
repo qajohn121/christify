@@ -43,24 +43,26 @@ jobs:
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
 
-      # === THE MAGIC FIX: AUTO-RENAME PACKAGE ===
-      # This changes com.example.christify -> com.qajohn.christify
-      - name: Auto-Rename Package
+      # === THE FIX: SMART RENAME ===
+      # Instead of moving files manually, we tell Flutter to regenerate the Android project
+      # with the new Organization Name (com.qajohn).
+      - name: Update Package Name
         run: |
-          # 1. Replace text in build.gradle and Manifests
-          find android -type f \( -name "build.gradle" -o -name "*.xml" -o -name "*.kt" -o -name "*.java" \) -exec sed -i 's/com.example.christify/com.qajohn.christify/g' {} +
+          # 1. Regenerate Android project with new org name
+          flutter create --org com.qajohn --platforms android .
           
-          # 2. Move the Kotlin file to the new folder structure
-          mkdir -p android/app/src/main/kotlin/com/qajohn
-          cp -r android/app/src/main/kotlin/com/example/christify android/app/src/main/kotlin/com/qajohn/
+          # 2. Force update the Application ID in build.gradle
+          sed -i 's/com.example.christify/com.qajohn.christify/g' android/app/build.gradle
+          sed -i 's/com.example/com.qajohn/g' android/app/build.gradle
+          
+          # 3. Delete the old "example" folders to prevent Duplicate Class errors
           rm -rf android/app/src/main/kotlin/com/example
-      # ==========================================
-
-      # 3. Repair Icons (Just in case)
-      - name: Fix Corrupt Icons & Repair Project
-        run: |
+          rm -rf android/app/src/main/java/com/example
+          
+          # 4. Remove corrupt icons (Just in case)
           rm -rf android/app/src/main/res/mipmap-*
           flutter create --platforms android .
+      # =============================
       
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
